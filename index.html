@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turf Pro | Multi-User Cloud Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 antialiased pb-12">
+
+    <!-- TOP APP HEADER -->
+    <header class="bg-gradient-to-r from-emerald-900 via-emerald-800 to-slate-900 text-white shadow-xl sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-500 text-white p-2.5 rounded-xl shadow-lg shadow-emerald-500/30">
+                    <i class="fa-solid fa-futbol text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight">TURF<span class="text-emerald-400">PRO</span></h1>
+                    <p class="text-xs text-emerald-200/70 font-medium">Multi-User Live Sync</p>
+                </div>
+            </div>
+
+            <!-- Connection Status Badge -->
+            <div id="syncBadge" class="text-xs font-bold px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-2">
+                <i class="fa-solid fa-rotate text-xs animate-spin"></i> Connecting Cloud...
+            </div>
+
+            <!-- Tab Switcher -->
+            <nav class="flex bg-slate-900/60 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
+                <button onclick="switchTab('new-booking')" id="tab-new-booking" class="tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 bg-emerald-500 text-white shadow-md">
+                    <i class="fa-solid fa-calendar-plus"></i>
+                    <span>New Booking</span>
+                </button>
+                <button onclick="switchTab('bookings-list')" id="tab-bookings-list" class="tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Bookings Log</span>
+                </button>
+                <button onclick="switchTab('inventory')" id="tab-inventory" class="tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>Drinks Stock</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- METRICS OVERVIEW BANNER -->
+    <div class="max-w-7xl mx-auto px-4 mt-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="glass-card p-4 rounded-2xl shadow-sm flex items-center gap-3">
+                <div class="p-3 bg-emerald-100 text-emerald-600 rounded-xl">
+                    <i class="fa-solid fa-calendar-check text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Upcoming Slots</span>
+                    <h4 id="statUpcoming" class="text-xl font-bold text-slate-800">0</h4>
+                </div>
+            </div>
+
+            <div class="glass-card p-4 rounded-2xl shadow-sm flex items-center gap-3">
+                <div class="p-3 bg-blue-100 text-blue-600 rounded-xl">
+                    <i class="fa-solid fa-indian-rupee-sign text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Pending Dues</span>
+                    <h4 id="statDues" class="text-xl font-bold text-slate-800">₹0</h4>
+                </div>
+            </div>
+
+            <div class="glass-card p-4 rounded-2xl shadow-sm flex items-center gap-3">
+                <div class="p-3 bg-amber-100 text-amber-600 rounded-xl">
+                    <i class="fa-solid fa-wine-bottle text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Low Stock Alerts</span>
+                    <h4 id="statLowStock" class="text-xl font-bold text-slate-800">0</h4>
+                </div>
+            </div>
+
+            <div class="glass-card p-4 rounded-2xl shadow-sm flex items-center gap-3">
+                <div class="p-3 bg-purple-100 text-purple-600 rounded-xl">
+                    <i class="fa-solid fa-chart-line text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Total Bookings</span>
+                    <h4 id="statTotalBookings" class="text-xl font-bold text-slate-800">0</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN BODY CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 mt-6">
+
+        <!-- SECTION 1: NEW BOOKING -->
+        <div id="sec-new-booking" class="tab-content grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="lg:col-span-1 glass-card p-6 rounded-2xl shadow-sm">
+                <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-200">
+                    <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-plus text-emerald-500"></i> New Reservation
+                    </h2>
+                    <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full uppercase">Live Sync</span>
+                </div>
+
+                <form id="bookingForm" class="space-y-4">
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Customer Name</label>
+                            <input type="text" id="custName" required placeholder="e.g. Rahul Sharma" class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Mobile Number</label>
+                            <input type="tel" id="custPhone" required placeholder="e.g. 9876543210" class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Date</label>
+                            <input type="date" id="bookingDate" required class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Start Time</label>
+                            <input type="time" id="startTime" required class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Duration (Hrs)</label>
+                            <input type="number" id="durationHours" min="0.5" step="0.5" value="1" required class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" oninput="calculateTotal()">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Rate / Hr (₹)</label>
+                            <input type="number" id="hourlyRate" min="0" value="1000" required class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" oninput="calculateTotal()">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Advance Received (₹)</label>
+                        <input type="number" id="advancePaid" min="0" value="0" class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none" oninput="calculateTotal()">
+                    </div>
+
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                            <span><i class="fa-solid fa-bottle-water text-blue-500 mr-1"></i> Add Refreshments</span>
+                        </label>
+                        
+                        <div class="grid grid-cols-3 gap-2">
+                            <select id="drinkSelect" class="col-span-2 text-xs px-2 py-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-emerald-500">
+                                <option value="">Select Drink...</option>
+                            </select>
+                            <input type="number" id="drinkQty" placeholder="Qty" min="1" value="1" class="text-xs px-2 py-2 border rounded-lg bg-white outline-none">
+                        </div>
+                        <button type="button" onclick="addDrinkToTempList()" class="w-full py-1.5 text-xs bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-700 font-bold transition">
+                            + Add To Bill
+                        </button>
+
+                        <ul id="tempDrinkList" class="space-y-1 pt-1"></ul>
+                    </div>
+
+                    <div class="p-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl space-y-2 text-xs">
+                        <div class="flex justify-between text-slate-300"><span>Turf Fee:</span> <span>₹<span id="summaryTurf">1000</span></span></div>
+                        <div class="flex justify-between text-slate-300"><span>Refreshments:</span> <span>₹<span id="summaryDrinks">0</span></span></div>
+                        <div class="flex justify-between text-emerald-400 font-medium"><span>Advance Paid:</span> <span>- ₹<span id="summaryAdvance">0</span></span></div>
+                        <div class="flex justify-between text-sm font-extrabold border-t border-slate-700 pt-2 text-white">
+                            <span>Balance Due:</span> <span class="text-amber-400">₹<span id="summaryBalance">1000</span></span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-600/30 transition">
+                        Confirm & Sync Cloud
+                    </button>
+                </form>
+            </div>
+
+            <div class="lg:col-span-2 space-y-6">
+                <div class="glass-card p-6 rounded-2xl shadow-sm">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-bolt text-amber-500"></i> Next Scheduled Slots
+                        </h3>
+                        <span class="text-xs text-slate-400 font-medium">Shared Real-Time</span>
+                    </div>
+
+                    <div id="quickUpcoming" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                </div>
+
+                <div class="bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-6 rounded-2xl shadow-md">
+                    <h4 class="font-bold text-lg mb-1"><i class="fa-solid fa-cloud"></i> Multi-User Shared Database</h4>
+                    <p class="text-xs text-emerald-100">Any booking added, payment status updated, or stock changed on one phone will automatically update across all other users in real time.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: BOOKINGS LIST -->
+        <div id="sec-bookings-list" class="tab-content hidden space-y-4">
+            <div class="glass-card p-4 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex bg-slate-200/70 p-1 rounded-xl text-xs font-bold w-full md:w-auto">
+                    <button onclick="setFilterCategory('upcoming')" id="btn-filter-upcoming" class="flex-1 md:flex-none px-4 py-2 rounded-lg bg-white text-emerald-700 shadow-sm transition">Upcoming</button>
+                    <button onclick="setFilterCategory('done')" id="btn-filter-done" class="flex-1 md:flex-none px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">Completed / Past</button>
+                    <button onclick="setFilterCategory('all')" id="btn-filter-all" class="flex-1 md:flex-none px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">All History</button>
+                </div>
+
+                <div class="flex gap-2 w-full md:w-auto">
+                    <select id="sortOrder" onchange="renderBookingsTable()" class="text-xs font-semibold border border-slate-200 px-3 py-2 rounded-xl outline-none bg-white">
+                        <option value="asc">Sort: Nearest Date First</option>
+                        <option value="desc">Sort: Latest Date First</option>
+                    </select>
+
+                    <input type="text" id="searchInput" onkeyup="renderBookingsTable()" placeholder="Search customer or phone..." class="w-full md:w-64 px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium outline-none">
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-900 text-white uppercase text-[10px] font-bold">
+                            <tr>
+                                <th class="p-4">Customer</th>
+                                <th class="p-4">Slot</th>
+                                <th class="p-4">Bill</th>
+                                <th class="p-4">Advance/Due</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Payment</th>
+                                <th class="p-4 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingTableBody" class="divide-y divide-slate-200"></tbody>
+                    </table>
+                </div>
+                <div id="noData" class="p-12 text-center text-slate-400 hidden">No bookings found.</div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: DRINKS INVENTORY -->
+        <div id="sec-inventory" class="tab-content hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 glass-card p-6 rounded-2xl shadow-sm h-fit">
+                <h2 class="font-bold text-slate-800 pb-3 mb-3 border-b flex items-center gap-2">
+                    <i class="fa-solid fa-box-open text-emerald-600"></i> Add Stock Item
+                </h2>
+
+                <form id="inventoryForm" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Item Name</label>
+                        <input type="text" id="invItemName" required placeholder="e.g. Gatorade 500ml" class="w-full px-3 py-2 text-xs border rounded-xl outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Price (₹)</label>
+                            <input type="number" id="invItemPrice" min="0" required placeholder="60" class="w-full px-3 py-2 text-xs border rounded-xl outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Stock Qty</label>
+                            <input type="number" id="invItemStock" min="0" required placeholder="24" class="w-full px-3 py-2 text-xs border rounded-xl outline-none">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl shadow transition">
+                        + Add Stock
+                    </button>
+                </form>
+            </div>
+
+            <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-sm">
+                <h2 class="font-bold text-slate-800 pb-3 mb-3 border-b flex items-center gap-2">
+                    <i class="fa-solid fa-warehouse text-emerald-600"></i> Current Drink Inventory
+                </h2>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold">
+                            <tr>
+                                <th class="p-3">Drink Name</th>
+                                <th class="p-3">Price</th>
+                                <th class="p-3">In Stock</th>
+                                <th class="p-3">Adjust</th>
+                                <th class="p-3 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        // Active Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkTAxzxDFoAYGt4U43ynolVZT9T1YdLb4",
+            authDomain: "turfmanager-d300a.firebaseapp.com",
+            databaseURL: "https://turfmanager-d300a-default-rtdb.firebaseio.com",
+            projectId: "turfmanager-d300a",
+            storageBucket: "turfmanager-d300a.firebasestorage.app",
+            messagingSenderId: "865676480138",
+            appId: "1:865676480138:web:3dfadb12122993ad1f2773",
+            measurementId: "G-J7X1CDZJ0T"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // State
+        let bookings = [];
+        let inventory = [];
+        let currentTempDrinks = [];
+        let currentFilterCategory = 'upcoming';
+
+        // Real-Time Cloud Listeners
+        db.ref('bookings').on('value', snapshot => {
+            const data = snapshot.val();
+            bookings = data ? Object.values(data) : [];
+            renderBookingsTable();
+            renderQuickUpcoming();
+            updateStats();
+            updateSyncStatus('Live Synced', 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', 'fa-cloud-check');
+        }, error => {
+            console.error(error);
+            updateSyncStatus('Sync Error (Check Rules)', 'bg-red-500/20 text-red-300 border-red-500/30', 'fa-triangle-exclamation');
+        });
+
+        db.ref('inventory').on('value', snapshot => {
+            const data = snapshot.val();
+            inventory = data ? Object.values(data) : [];
+            renderInventoryTable();
+            populateDrinkSelect();
+            updateStats();
+        });
+
+        function updateSyncStatus(text, bgClass, icon) {
+            const badge = document.getElementById('syncBadge');
+            badge.className = `text-xs font-bold px-3 py-1.5 rounded-full ${bgClass} border flex items-center gap-2`;
+            badge.innerHTML = `<i class="fa-solid ${icon}"></i> ${text}`;
+        }
+
+        function saveBookingsToCloud() {
+            db.ref('bookings').set(bookings);
+        }
+
+        function saveInventoryToCloud() {
+            db.ref('inventory').set(inventory);
+        }
+
+        document.getElementById('bookingDate').valueAsDate = new Date();
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-500', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-300');
+            });
+
+            document.getElementById(`sec-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            activeBtn.classList.add('bg-emerald-500', 'text-white', 'shadow-md');
+            activeBtn.classList.remove('text-slate-300');
+        }
+
+        function updateStats() {
+            const upcomingCount = bookings.filter(b => !isBookingPast(b)).length;
+            const totalDues = bookings.reduce((sum, b) => sum + (b.balanceDue > 0 ? b.balanceDue : 0), 0);
+            const lowStockCount = inventory.filter(i => i.stock <= 10).length;
+
+            document.getElementById('statUpcoming').innerText = upcomingCount;
+            document.getElementById('statDues').innerText = `₹${totalDues}`;
+            document.getElementById('statLowStock').innerText = lowStockCount;
+            document.getElementById('statTotalBookings').innerText = bookings.length;
+        }
+
+        function populateDrinkSelect() {
+            const select = document.getElementById('drinkSelect');
+            select.innerHTML = '<option value="">Select Drink...</option>';
+            inventory.forEach(item => {
+                const disabled = item.stock <= 0 ? 'disabled' : '';
+                select.innerHTML += `<option value="${item.id}" ${disabled}>${item.name} - ₹${item.price} (${item.stock} left)</option>`;
+            });
+        }
+
+        document.getElementById('inventoryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('invItemName').value.trim();
+            const price = parseFloat(document.getElementById('invItemPrice').value) || 0;
+            const stock = parseInt(document.getElementById('invItemStock').value) || 0;
+
+            inventory.push({ id: Date.now(), name, price, stock });
+            saveInventoryToCloud();
+            this.reset();
+        });
+
+        function adjustStock(id, amount) {
+            inventory = inventory.map(item => {
+                if (item.id === id) item.stock = Math.max(0, item.stock + amount);
+                return item;
+            });
+            saveInventoryToCloud();
+        }
+
+        function deleteInventoryItem(id) {
+            if (confirm('Delete drink item from stock?')) {
+                inventory = inventory.filter(item => item.id !== id);
+                saveInventoryToCloud();
+            }
+        }
+
+        function renderInventoryTable() {
+            const tbody = document.getElementById('inventoryTableBody');
+            tbody.innerHTML = '';
+            inventory.forEach(item => {
+                const badgeClass = item.stock <= 5 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700';
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-3 font-semibold">${item.name}</td>
+                        <td class="p-3">₹${item.price}</td>
+                        <td class="p-3"><span class="px-2 py-1 rounded text-[10px] font-bold ${badgeClass}">${item.stock} left</span></td>
+                        <td class="p-3 space-x-1">
+                            <button onclick="adjustStock(${item.id}, 1)" class="px-2 py-0.5 bg-slate-200 rounded font-bold">+1</button>
+                            <button onclick="adjustStock(${item.id}, -1)" class="px-2 py-0.5 bg-slate-200 rounded font-bold">-1</button>
+                        </td>
+                        <td class="p-3 text-center"><button onclick="deleteInventoryItem(${item.id})" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function addDrinkToTempList() {
+            const drinkId = parseInt(document.getElementById('drinkSelect').value);
+            const qty = parseInt(document.getElementById('drinkQty').value) || 1;
+            const item = inventory.find(i => i.id === drinkId);
+            if (!item || qty > item.stock) return alert('Select item / Insufficient stock');
+
+            const existing = currentTempDrinks.find(d => d.drinkId === drinkId);
+            if (existing) {
+                existing.qty += qty;
+                existing.total = existing.qty * item.price;
+            } else {
+                currentTempDrinks.push({ drinkId: item.id, name: item.name, price: item.price, qty, total: qty * item.price });
+            }
+            renderTempDrinks();
+            calculateTotal();
+        }
+
+        function renderTempDrinks() {
+            const list = document.getElementById('tempDrinkList');
+            list.innerHTML = currentTempDrinks.map((d, i) => `
+                <li class="flex justify-between bg-white px-2 py-1 rounded border text-xs">
+                    <span>${d.qty}x ${d.name} (₹${d.total})</span>
+                    <button type="button" onclick="currentTempDrinks.splice(${i},1);renderTempDrinks();calculateTotal();" class="text-red-500 font-bold">&times;</button>
+                </li>
+            `).join('');
+        }
+
+        function calculateTotal() {
+            const hours = parseFloat(document.getElementById('durationHours').value) || 0;
+            const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
+            const advance = parseFloat(document.getElementById('advancePaid').value) || 0;
+            const turfTotal = hours * rate;
+            const drinksTotal = currentTempDrinks.reduce((s, d) => s + d.total, 0);
+
+            document.getElementById('summaryTurf').innerText = turfTotal;
+            document.getElementById('summaryDrinks').innerText = drinksTotal;
+            document.getElementById('summaryAdvance').innerText = advance;
+            document.getElementById('summaryBalance').innerText = Math.max(0, (turfTotal + drinksTotal) - advance);
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('custName').value.trim();
+            const phone = document.getElementById('custPhone').value.trim();
+            const date = document.getElementById('bookingDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const hours = parseFloat(document.getElementById('durationHours').value);
+            const rate = parseFloat(document.getElementById('hourlyRate').value);
+            const advance = parseFloat(document.getElementById('advancePaid').value) || 0;
+
+            const turfTotal = hours * rate;
+            const drinksTotal = currentTempDrinks.reduce((s, d) => s + d.total, 0);
+            const grandTotal = turfTotal + drinksTotal;
+            const balanceDue = grandTotal - advance;
+
+            currentTempDrinks.forEach(td => {
+                const invItem = inventory.find(i => i.id === td.drinkId);
+                if (invItem) invItem.stock = Math.max(0, invItem.stock - td.qty);
+            });
+            saveInventoryToCloud();
+
+            bookings.unshift({
+                id: Date.now(), name, phone, date, startTime, hours, rate,
+                turfTotal, drinks: [...currentTempDrinks], drinksTotal, grandTotal,
+                advance, balanceDue, status: balanceDue <= 0 ? 'Paid' : 'Pending'
+            });
+
+            saveBookingsToCloud();
+            this.reset();
+            document.getElementById('bookingDate').valueAsDate = new Date();
+            currentTempDrinks = [];
+            renderTempDrinks();
+            calculateTotal();
+            alert('Saved & synced across all users!');
+        });
+
+        function isBookingPast(b) {
+            const bookingDateTime = new Date(`${b.date}T${b.startTime}`);
+            bookingDateTime.setHours(bookingDateTime.getHours() + b.hours);
+            return bookingDateTime < new Date();
+        }
+
+        function setFilterCategory(cat) {
+            currentFilterCategory = cat;
+            ['upcoming', 'done', 'all'].forEach(c => {
+                document.getElementById(`btn-filter-${c}`).className = c === cat ? 'flex-1 md:flex-none px-4 py-2 rounded-lg bg-white text-emerald-700 font-bold shadow-sm' : 'flex-1 md:flex-none px-4 py-2 rounded-lg text-slate-600 font-medium';
+            });
+            renderBookingsTable();
+        }
+
+        function renderBookingsTable() {
+            const tbody = document.getElementById('bookingTableBody');
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            let filtered = bookings.filter(b => {
+                const matches = b.name.toLowerCase().includes(query) || b.phone.toLowerCase().includes(query);
+                const isPast = isBookingPast(b);
+                if (!matches) return false;
+                if (currentFilterCategory === 'upcoming') return !isPast;
+                if (currentFilterCategory === 'done') return isPast;
+                return true;
+            });
+
+            filtered.forEach(b => {
+                const isPast = isBookingPast(b);
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="p-4"><div class="font-bold">${b.name}</div><div class="text-[10px] text-slate-400">${b.phone}</div></td>
+                        <td class="p-4"><div class="font-semibold">${b.date}</div><div class="text-[10px] text-slate-400">${b.startTime} (${b.hours}h)</div></td>
+                        <td class="p-4">Turf: ₹${b.turfTotal}<br>Bar: ₹${b.drinksTotal}</td>
+                        <td class="p-4"><span class="text-emerald-600">Adv: ₹${b.advance}</span><br><span class="font-bold text-red-500">Due: ₹${b.balanceDue}</span></td>
+                        <td class="p-4"><span class="px-2 py-1 rounded-full text-[10px] ${isPast ? 'bg-slate-200':'bg-blue-100 text-blue-700'}">${isPast ? 'Done':'Scheduled'}</span></td>
+                        <td class="p-4"><button onclick="togglePayment(${b.id})" class="px-2 py-1 rounded-full text-[10px] ${b.status==='Paid'?'bg-emerald-100 text-emerald-800':'bg-amber-100 text-amber-800'}">${b.status}</button></td>
+                        <td class="p-4 text-center"><button onclick="deleteBooking(${b.id})" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function togglePayment(id) {
+            bookings = bookings.map(b => {
+                if (b.id === id) b.status = b.status === 'Paid' ? 'Pending' : 'Paid';
+                return b;
+            });
+            saveBookingsToCloud();
+        }
+
+        function deleteBooking(id) {
+            if (confirm('Delete booking?')) {
+                bookings = bookings.filter(b => b.id !== id);
+                saveBookingsToCloud();
+            }
+        }
+
+        function renderQuickUpcoming() {
+            const container = document.getElementById('quickUpcoming');
+            const upcoming = bookings.filter(b => !isBookingPast(b)).slice(0, 4);
+            if (upcoming.length === 0) return container.innerHTML = '<div class="col-span-2 text-xs text-slate-400 py-4 text-center">No upcoming slots</div>';
+
+            container.innerHTML = upcoming.map(b => `
+                <div class="p-3 bg-slate-50 rounded-xl border flex justify-between">
+                    <div><div class="font-bold text-xs">${b.name}</div><div class="text-[10px] text-slate-400">${b.date} @ ${b.startTime}</div></div>
+                    <div class="text-right"><span class="text-xs font-bold text-emerald-600">₹${b.grandTotal}</span><div class="text-[10px] text-red-500 font-bold">Due: ₹${b.balanceDue}</div></div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
